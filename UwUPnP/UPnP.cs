@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.NetworkInformation;
@@ -41,16 +40,12 @@ namespace UwUPnP
 
 		public static bool IsAvailable => Gateway is not null;
 
-		public static void Open(Protocol protocol, ushort port) => Gateway?.Open(protocol, port);
-
-		public static void Close(Protocol protocol, ushort port) => Gateway?.Close(protocol, port);
-
-		public static bool IsMapped(Protocol protocol, ushort port) => Gateway?.IsMapped(protocol, port) ?? false;
-
 		public static IPAddress ExternalIP => Gateway?.ExternalIP;
-
 		public static IPAddress LocalIP => Gateway?.LocalIP;
 
+		public static void Open(Protocol protocol, ushort port) => Gateway?.Open(protocol, port);
+		public static void Close(Protocol protocol, ushort port) => Gateway?.Close(protocol, port);
+		public static bool IsMapped(Protocol protocol, ushort port) => Gateway?.IsMapped(protocol, port) ?? false;
 
 		private static readonly string[] searchMessageTypes = new[]
 		{
@@ -76,29 +71,29 @@ namespace UwUPnP
 
 		private static async Task StartListener(IPAddress ip, string type)
 		{
+			IPEndPoint endPoint = IPEndPoint.Parse("239.255.255.250:1900");
+
+			string request = string.Join
+			(
+				"\n",
+
+				"M-SEARCH * HTTP/1.1",
+				$"HOST: {endPoint}",
+				$"ST: {type}",
+				"MAN: \"ssdp:discover\"",
+				"MX: 2",
+				"",""//End with double newlines
+			);
+			byte[] req = Encoding.ASCII.GetBytes(request);
+
+			Socket socket = new Socket(ip.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
+			{
+				ReceiveTimeout = 3000,
+				SendTimeout = 3000
+			};
+
 			await Task.Run(() =>
 			{
-				IPEndPoint endPoint = IPEndPoint.Parse("239.255.255.250:1900");
-
-				string request = string.Join
-				(
-					"\n",
-
-					"M-SEARCH * HTTP/1.1",
-					$"HOST: {endPoint}",
-					$"ST: {type}",
-					"MAN: \"ssdp:discover\"",
-					"MX: 2",
-					"",""//End with double newlines
-				);
-				byte[] req = Encoding.ASCII.GetBytes(request);
-
-				Socket socket = new Socket(ip.AddressFamily, SocketType.Dgram, ProtocolType.Udp)//was AddressFamily.InterNetwork
-				{
-					ReceiveTimeout = 3000,
-					SendTimeout = 3000
-				};
-
 				socket.Bind(new IPEndPoint(ip, 0));
 				try
 				{
@@ -121,16 +116,14 @@ namespace UwUPnP
 
 		private static IEnumerable<IPAddress> GetLocalIPs() => NetworkInterface.GetAllNetworkInterfaces().Where(IsValidInterface).SelectMany(GetValidNetworkIPs);
 
+		// TODO: Filter out virtual/sub-interfaces (like for VMs).
 		private static bool IsValidInterface(NetworkInterface network)
-		{
-			bool virt = false; // TODO: check if virtual
-			NetworkInterfaceType type = network.NetworkInterfaceType;
-			return network.OperationalStatus == OperationalStatus.Up && type != NetworkInterfaceType.Loopback && type != NetworkInterfaceType.Ppp && !virt;
-		}
+			=> network.OperationalStatus == OperationalStatus.Up
+			&& network.NetworkInterfaceType != NetworkInterfaceType.Loopback
+			&& network.NetworkInterfaceType != NetworkInterfaceType.Ppp;
 
-		private static IEnumerable<IPAddress> GetValidNetworkIPs(NetworkInterface network)
-		{
-			return network.GetIPProperties().UnicastAddresses.Select(a => a.Address).Where(a => a.AddressFamily == AddressFamily.InterNetwork || a.AddressFamily == AddressFamily.InterNetworkV6);
-		}
+		private static IEnumerable<IPAddress> GetValidNetworkIPs(NetworkInterface network) => network.GetIPProperties().UnicastAddresses
+			.Select(a => a.Address)
+			.Where(a => a.AddressFamily == AddressFamily.InterNetwork || a.AddressFamily == AddressFamily.InterNetworkV6);
 	}
 }

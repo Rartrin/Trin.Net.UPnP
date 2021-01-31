@@ -10,6 +10,8 @@ namespace UwUPnP
 {
 	//http://www.upnp-hacks.org/igd.html
 
+	//Originally based on a port of waifuPnP. Mostly rewritten.
+
 	internal class Gateway
 	{
 		private readonly IPAddress client;
@@ -112,67 +114,29 @@ namespace UwUPnP
 
 		private Dictionary<string, string> RunCommand(string action, params (string Key, object Value)[] args)
 		{
-			byte[] requestData = GetSoapRequest(action, args);
+			string requestData = GetSoapRequest(action, args);
 
 			HttpWebRequest request = SendRequest(action, requestData);
 
 			return GetResponse(request);
 		}
 
-		private byte[] GetSoapRequest(string action, (string Key, object Value)[] args)
+		private string GetSoapRequest(string action, (string Key, object Value)[] args) => string.Concat
+		(
+			"<?xml version=\"1.0\"?>\n",
+			"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">",
+				"<SOAP-ENV:Body>",
+					$"<m:{action} xmlns:m=\"{serviceType}\">",
+						string.Concat(args.Select(a => $"<{a.Key}>{a.Value}</{a.Key}>")),
+					$"</m:{action}>",
+				"</SOAP-ENV:Body>",
+			"</SOAP-ENV:Envelope>"
+		);
+
+		private HttpWebRequest SendRequest(string action, string requestData)
 		{
-			//var soap = new List<string>();
-			//soap.Add("<?xml version=\"1.0\"?>\n");
-			//soap.Add("<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">");
-			//soap.Add("<SOAP-ENV:Body>");
-			//soap.Add($"<m:{action} xmlns:m=\"{serviceType}\">");
-			//soap.AddRange(args.Select(a => $"<{a.Key}>{a.Value}</{a.Key}>"));
-			//soap.Add($"</m:{action}>");
-			//soap.Add("</SOAP-ENV:Body>");
-			//soap.Add("</SOAP-ENV:Envelope>");
-			//return Encoding.ASCII.GetBytes(string.Concat(soap));
+			byte[] data = Encoding.ASCII.GetBytes(requestData);
 
-			//XDocument doc = new XDocument
-			//(
-			//	new XDeclaration("1.0","UTF-8","yes"),
-			//	new XElement
-			//	(
-			//		XName.Get("Envelope","SOAP-ENV"),
-			//		new XAttribute(XName.Get("SOAP-ENV","xmlns"),"http://schemas.xmlsoap.org/soap/envelope/"),
-			//		new XAttribute(XName.Get("encodingStyle","SOAP-ENV"),"http://schemas.xmlsoap.org/soap/encoding/"),
-			//		new XElement
-			//		(
-			//			XName.Get("Body","SOAP-ENV"),
-			//			new XElement
-			//			(
-			//				XName.Get(action,"m"),
-			//				args.Select(a => new XElement(a.Key, a.Value)).Prepend<object>
-			//				(
-			//					new XAttribute(XName.Get("m","xmlns"),serviceType)
-			//				).ToArray()
-			//			)
-			//		)
-			//	)
-			//);
-			//string soap = doc.ToString(SaveOptions.DisableFormatting);
-
-			string soap = string.Concat
-			(
-				"<?xml version=\"1.0\"?>\n",
-				"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">",
-					"<SOAP-ENV:Body>",
-						$"<m:{action} xmlns:m=\"{serviceType}\">",
-							string.Concat(args.Select(a => $"<{a.Key}>{a.Value}</{a.Key}>")),
-						$"</m:{action}>",
-					"</SOAP-ENV:Body>",
-				"</SOAP-ENV:Envelope>"
-			);
-
-			return Encoding.ASCII.GetBytes(soap);
-		}
-
-		private HttpWebRequest SendRequest(string action, byte[] data)
-		{
 			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(controlURL);
 
 			request.Method = "POST";
