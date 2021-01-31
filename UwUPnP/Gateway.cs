@@ -110,15 +110,51 @@ namespace UwUPnP
 
 		private static string BuildArgString(IEnumerable<(string Key, object Value)> args) => string.Concat(args.Select(a => $"<{a.Key}>{a.Value}</{a.Key}>"));
 
-		private Dictionary<string, string> Command(string action, PortType type, int port, params (string Key, object Value)[] args)
+		private Dictionary<string, string> RunCommand(string action, params (string Key, object Value)[] args)
 		{
-			var actionArgs = args.ToList();
-			if(type != PortType.Unknown)
-			{
-				actionArgs.Add(("NewRemoteHost", ""));
-				actionArgs.Add(("NewProtocol", type));
-				actionArgs.Add(("NewExternalPort", port));
-			}
+			byte[] requestData = GetSoapRequest(action, args);
+
+			HttpWebRequest request = SendRequest(action, requestData);
+
+			return GetResponse(request);
+		}
+
+		private byte[] GetSoapRequest(string action, (string Key, object Value)[] args)
+		{
+			//var soap = new List<string>();
+			//soap.Add("<?xml version=\"1.0\"?>\n");
+			//soap.Add("<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">");
+			//soap.Add("<SOAP-ENV:Body>");
+			//soap.Add($"<m:{action} xmlns:m=\"{serviceType}\">");
+			//soap.AddRange(args.Select(a => $"<{a.Key}>{a.Value}</{a.Key}>"));
+			//soap.Add($"</m:{action}>");
+			//soap.Add("</SOAP-ENV:Body>");
+			//soap.Add("</SOAP-ENV:Envelope>");
+			//return Encoding.ASCII.GetBytes(string.Concat(soap));
+
+			//XDocument doc = new XDocument
+			//(
+			//	new XDeclaration("1.0","UTF-8","yes"),
+			//	new XElement
+			//	(
+			//		XName.Get("Envelope","SOAP-ENV"),
+			//		new XAttribute(XName.Get("SOAP-ENV","xmlns"),"http://schemas.xmlsoap.org/soap/envelope/"),
+			//		new XAttribute(XName.Get("encodingStyle","SOAP-ENV"),"http://schemas.xmlsoap.org/soap/encoding/"),
+			//		new XElement
+			//		(
+			//			XName.Get("Body","SOAP-ENV"),
+			//			new XElement
+			//			(
+			//				XName.Get(action,"m"),
+			//				args.Select(a => new XElement(a.Key, a.Value)).Prepend<object>
+			//				(
+			//					new XAttribute(XName.Get("m","xmlns"),serviceType)
+			//				).ToArray()
+			//			)
+			//		)
+			//	)
+			//);
+			//string soap = doc.ToString(SaveOptions.DisableFormatting);
 
 			string soap = string.Concat
 			(
@@ -126,34 +162,28 @@ namespace UwUPnP
 				"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">",
 					"<SOAP-ENV:Body>",
 						$"<m:{action} xmlns:m=\"{serviceType}\">",
-							BuildArgString(actionArgs),
+							string.Concat(args.Select(a => $"<{a.Key}>{a.Value}</{a.Key}>")),
 						$"</m:{action}>",
 					"</SOAP-ENV:Body>",
 				"</SOAP-ENV:Envelope>"
 			);
 
-			byte[] req = Encoding.ASCII.GetBytes(soap);
+			return Encoding.ASCII.GetBytes(soap);
+		}
 
-			HttpWebRequest request = (HttpWebRequest) WebRequest.Create(controlURL);
+		private HttpWebRequest SendRequest(string action, byte[] data)
+		{
+			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(controlURL);
 
 			request.Method = "POST";
 			request.ContentType = "text/xml";
-			//request.Connection = "Close";
-			request.ContentLength = req.Length;
+			request.ContentLength = data.Length;
 			request.Headers.Add("SOAPAction", $"\"{serviceType}#{action}\"");
 
-			Stream requestStream = request.GetRequestStream();
-			requestStream.Write(req);
-			requestStream.Close();
+			using Stream requestStream = request.GetRequestStream();
+			requestStream.Write(data);
 
-			Dictionary<string, string> ret = GetResponse(request);
-
-			if(ret.TryGetValue("errorCode", out string errorCode))
-			{
-				throw new Exception(errorCode);
-			}
-
-			return ret;
+			return request;
 		}
 
 		private static Dictionary<string, string> GetResponse(HttpWebRequest request)
@@ -181,23 +211,39 @@ namespace UwUPnP
 				}
 			}
 
+			if(ret.TryGetValue("errorCode", out string errorCode))
+			{
+				throw new Exception(errorCode);
+			}
+
 			return ret;
 		}
 
 		public IPAddress LocalIP => client;
 
-		public IPAddress ExternalIP => Command("GetExternalIPAddress", default, default).TryGetValue("NewExternalIPAddress", out string ret) ? IPAddress.Parse(ret) : null;
+		public IPAddress ExternalIP => RunCommand("GetExternalIPAddress").TryGetValue("NewExternalIPAddress", out string ret) ? IPAddress.Parse(ret) : null;
 
-		public void Open(PortType type, ushort port) => Command("AddPortMapping", type, port,
+		public void Open(Protocol protocol, ushort port, string description = "UwUPnP") => RunCommand("AddPortMapping",
+			("NewRemoteHost", ""),
+			("NewProtocol", protocol),
+			("NewExternalPort", port),
 			("NewInternalClient", client),
 			("NewInternalPort", port),
 			("NewEnabled", 1),
-			("NewPortMappingDescription", "UPnPLib"),
+			("NewPortMappingDescription", description),
 			("NewLeaseDuration", 0)
 		);
 
-		public void Close(PortType type, ushort port) => Command("DeletePortMapping", type, port);
+		public void Close(Protocol protocol, ushort port) => RunCommand("DeletePortMapping",
+			("NewRemoteHost", ""),
+			("NewProtocol", protocol),
+			("NewExternalPort", port)
+		);
 
-		public bool IsMapped(PortType type, ushort port) => Command("GetSpecificPortMappingEntry", type, port).ContainsKey("NewInternalPort");
+		public bool IsMapped(Protocol protocol, ushort port) => RunCommand("GetSpecificPortMappingEntry",
+			("NewRemoteHost", ""),
+			("NewProtocol", protocol),
+			("NewExternalPort", port)
+		).ContainsKey("NewInternalPort");
 	}
 }

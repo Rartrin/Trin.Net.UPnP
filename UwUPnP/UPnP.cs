@@ -10,7 +10,7 @@ using System.Threading.Tasks;
 
 namespace UwUPnP
 {
-	public enum PortType
+	public enum Protocol
 	{
 		Unknown = 0,
 		TCP = 1,
@@ -41,11 +41,11 @@ namespace UwUPnP
 
 		public static bool IsAvailable => Gateway is not null;
 
-		public static void Open(PortType type, ushort port) => Gateway?.Open(type, port);
+		public static void Open(Protocol protocol, ushort port) => Gateway?.Open(protocol, port);
 
-		public static void Close(PortType type, ushort port) => Gateway?.Close(type, port);
+		public static void Close(Protocol protocol, ushort port) => Gateway?.Close(protocol, port);
 
-		public static bool IsMapped(PortType type, ushort port) => Gateway?.IsMapped(type, port) ?? false;
+		public static bool IsMapped(Protocol protocol, ushort port) => Gateway?.IsMapped(protocol, port) ?? false;
 
 		public static IPAddress ExternalIP => Gateway?.ExternalIP;
 
@@ -111,20 +111,11 @@ namespace UwUPnP
 
 				byte[] buffer = new byte[0x600];
 
-				try
-				{
-					int count = socket.Receive(buffer);
-
-					string recv = Encoding.ASCII.GetString(buffer, 0, count);
-					Gateway gateway = new Gateway(ip, recv);
-					Interlocked.CompareExchange(ref defaultGateway, gateway, null);
-					searching = false;
-				}
-				catch(Exception e)
-				{
-					Console.WriteLine($"[{ip}] {e}");
-					return;
-				}
+				int count = socket.Receive(buffer);
+				string recv = Encoding.ASCII.GetString(buffer, 0, count);
+				Gateway gateway = new Gateway(ip, recv);
+				Interlocked.CompareExchange(ref defaultGateway, gateway, null);
+				searching = false;
 			});
 		}
 
@@ -139,7 +130,7 @@ namespace UwUPnP
 
 		private static IEnumerable<IPAddress> GetValidNetworkIPs(NetworkInterface network)
 		{
-			return network.GetIPProperties().UnicastAddresses.Select(a => a.Address).Where(a => a.AddressFamily == AddressFamily.InterNetwork || a.AddressFamily == AddressFamily.InterNetworkV6));
+			return network.GetIPProperties().UnicastAddresses.Select(a => a.Address).Where(a => a.AddressFamily == AddressFamily.InterNetwork || a.AddressFamily == AddressFamily.InterNetworkV6);
 		}
 	}
 }
