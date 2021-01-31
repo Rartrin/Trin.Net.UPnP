@@ -43,7 +43,7 @@ namespace UwUPnP
 		public static IPAddress ExternalIP => Gateway?.ExternalIP;
 		public static IPAddress LocalIP => Gateway?.LocalIP;
 
-		public static void Open(Protocol protocol, ushort port) => Gateway?.Open(protocol, port);
+		public static void Open(Protocol protocol, ushort port, string description = "UwUPnP") => Gateway?.Open(protocol, port, description);
 		public static void Close(Protocol protocol, ushort port) => Gateway?.Close(protocol, port);
 		public static bool IsMapped(Protocol protocol, ushort port) => Gateway?.IsMapped(protocol, port) ?? false;
 

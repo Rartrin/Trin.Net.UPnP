@@ -187,7 +187,7 @@ namespace UwUPnP
 
 		public IPAddress ExternalIP => RunCommand("GetExternalIPAddress").TryGetValue("NewExternalIPAddress", out string ret) ? IPAddress.Parse(ret) : null;
 
-		public void Open(Protocol protocol, ushort port, string description = "UwUPnP") => RunCommand("AddPortMapping",
+		public void Open(Protocol protocol, ushort port, string description) => RunCommand("AddPortMapping",
 			("NewRemoteHost", ""),
 			("NewProtocol", protocol),
 			("NewExternalPort", port),
