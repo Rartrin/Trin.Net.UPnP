@@ -7,6 +7,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UwUPnP", "UwUPnP\UwUPnP.csp
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UwUPnP Tester", "UwUPnP Tester\UwUPnP Tester.csproj", "{47182D26-9A97-4CC5-BFA0-A16735BAECE4}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "tPnP", "tPnP\tPnP.csproj", "{38E932FF-743D-44AA-AC1F-AA645BA06643}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -21,6 +23,10 @@ Global
 		{47182D26-9A97-4CC5-BFA0-A16735BAECE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{47182D26-9A97-4CC5-BFA0-A16735BAECE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{47182D26-9A97-4CC5-BFA0-A16735BAECE4}.Release|Any CPU.Build.0 = Release|Any CPU
+		{38E932FF-743D-44AA-AC1F-AA645BA06643}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{38E932FF-743D-44AA-AC1F-AA645BA06643}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{38E932FF-743D-44AA-AC1F-AA645BA06643}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{38E932FF-743D-44AA-AC1F-AA645BA06643}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

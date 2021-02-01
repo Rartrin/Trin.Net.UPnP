@@ -3,29 +3,82 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Text;
 using System.Xml.Linq;
 
 namespace UwUPnP
 {
-	//http://www.upnp-hacks.org/igd.html
+	//UPnP Specifications http://upnp.org/specs/gw/UPnP-gw-WANIPConnection-v1-Service.pdf
+	//Helpful overview http://www.upnp-hacks.org/igd.html
+	//Port tester https://www.yougetsignal.com/tools/open-ports/
 
-	//Originally based on a port of waifuPnP. Mostly rewritten.
+	//Originally based on a port of waifuPnP. Though it has been nearly completely rewritten by this point.
 
-	internal class Gateway
+	internal sealed class Gateway
 	{
-		private readonly IPAddress client;
+		public IPAddress InternalClient{get;}
 
 		private readonly string serviceType = null;
 		private readonly string controlURL = null;
 
-		public Gateway(IPAddress ip, string data)
+		private Gateway(IPAddress ip, string data)
 		{
-			client = ip;
+			InternalClient = ip;
 
 			string location = GetLocation(data);
 
 			(serviceType, controlURL) = GetInfo(location);
+		}
+
+		private static readonly string[] searchMessageTypes = new[]
+		{
+			"urn:schemas-upnp-org:device:InternetGatewayDevice:1",
+			"urn:schemas-upnp-org:service:WANIPConnection:1",
+			"urn:schemas-upnp-org:service:WANPPPConnection:1"
+		};
+
+		public static bool TryNew(IPAddress ip, out Gateway gateway)
+		{
+			IPEndPoint endPoint = IPEndPoint.Parse("239.255.255.250:1900");
+			Socket socket = new Socket(ip.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
+			{
+				ReceiveTimeout = 3000,
+				SendTimeout = 3000
+			};
+
+			socket.Bind(new IPEndPoint(ip, 0));
+
+			byte[] buffer = new byte[0x600];
+
+			foreach(string type in searchMessageTypes)
+			{
+				string request = string.Join
+				(
+					"\n",
+
+					"M-SEARCH * HTTP/1.1",
+					$"HOST: {endPoint}",
+					$"ST: {type}",
+					"MAN: \"ssdp:discover\"",
+					"MX: 2",
+					"",""//End with double newlines
+				);
+				byte[] req = Encoding.ASCII.GetBytes(request);
+
+				try
+				{
+					socket.SendTo(req, endPoint);
+
+					int recievedCount = socket.Receive(buffer);
+					
+					gateway = new Gateway(ip, Encoding.ASCII.GetString(buffer, 0, recievedCount));
+					return true;
+				}
+				catch{}
+			}
+			gateway = null;
+			return false;
 		}
 
 		private static string GetLocation(string data)
@@ -85,7 +138,7 @@ namespace UwUPnP
 
 				if(serviceType is not null && controlURL is not null)
 				{
-					if(serviceType.Contains(":wanipconnection:", StringComparison.InvariantCultureIgnoreCase) || serviceType.Contains(":wanpppconnection:", StringComparison.InvariantCultureIgnoreCase))
+					if(serviceType.ToLowerInvariant().Contains(":wanipconnection:") || serviceType.ToLowerInvariant().Contains(":wanpppconnection:"))
 					{
 						ret.serviceType = serviceType;
 						ret.controlURL = controlURL;
@@ -110,24 +163,24 @@ namespace UwUPnP
 			return ret;
 		}
 
-		private static string BuildArgString(IEnumerable<(string Key, object Value)> args) => string.Concat(args.Select(a => $"<{a.Key}>{a.Value}</{a.Key}>"));
+		private static string BuildArgString((string Key, object Value) arg) => $"<{arg.Key}>{arg.Value}</{arg.Key}>";
 
 		private Dictionary<string, string> RunCommand(string action, params (string Key, object Value)[] args)
 		{
-			string requestData = GetSoapRequest(action, args);
+			string requestData = GetRequestData(action, args);
 
 			HttpWebRequest request = SendRequest(action, requestData);
 
 			return GetResponse(request);
 		}
 
-		private string GetSoapRequest(string action, (string Key, object Value)[] args) => string.Concat
+		private string GetRequestData(string action, (string Key, object Value)[] args) => string.Concat
 		(
 			"<?xml version=\"1.0\"?>\n",
 			"<SOAP-ENV:Envelope xmlns:SOAP-ENV=\"http://schemas.xmlsoap.org/soap/envelope/\" SOAP-ENV:encodingStyle=\"http://schemas.xmlsoap.org/soap/encoding/\">",
 				"<SOAP-ENV:Body>",
 					$"<m:{action} xmlns:m=\"{serviceType}\">",
-						string.Concat(args.Select(a => $"<{a.Key}>{a.Value}</{a.Key}>")),
+						string.Concat(args.Select(BuildArgString)),
 					$"</m:{action}>",
 				"</SOAP-ENV:Body>",
 			"</SOAP-ENV:Envelope>"
@@ -152,28 +205,23 @@ namespace UwUPnP
 
 		private static Dictionary<string, string> GetResponse(HttpWebRequest request)
 		{
-			using HttpWebResponse response = (HttpWebResponse)request.GetResponse();
-			if(response.StatusCode != HttpStatusCode.OK)
-			{
-				return null;
-			}
-
 			Dictionary<string, string> ret = new Dictionary<string, string>();
 
-			XDocument doc = XDocument.Load(response.GetResponseStream());
-
-			if(doc is null)
+			try
 			{
-				throw new NullReferenceException("XML Document is null");
-			}
+				using HttpWebResponse response = (HttpWebResponse)request.GetResponse();
+				if(response.StatusCode != HttpStatusCode.OK){return null;}
 
-			foreach(XNode node in doc.DescendantNodes())
-			{
-				if(node is XElement ele && ele.FirstNode is XText txt)
+				XDocument doc = XDocument.Load(response.GetResponseStream());
+				foreach(XNode node in doc.DescendantNodes())
 				{
-					ret[ele.Name.LocalName] = txt.Value;
+					if(node is XElement ele && ele.FirstNode is XText txt)
+					{
+						ret[ele.Name.LocalName] = txt.Value;
+					}
 				}
 			}
+			catch{}
 
 			if(ret.TryGetValue("errorCode", out string errorCode))
 			{
@@ -183,31 +231,36 @@ namespace UwUPnP
 			return ret;
 		}
 
-		public IPAddress LocalIP => client;
+		
 
-		public IPAddress ExternalIP => RunCommand("GetExternalIPAddress").TryGetValue("NewExternalIPAddress", out string ret) ? IPAddress.Parse(ret) : null;
+		public IPAddress ExternalIPAddress => RunCommand("GetExternalIPAddress").TryGetValue("NewExternalIPAddress", out string ret) ? IPAddress.Parse(ret) : null;
 
-		public void Open(Protocol protocol, ushort port, string description) => RunCommand("AddPortMapping",
+		public bool SpecificPortMappingExists(ushort externalPort, Protocol protocol) => RunCommand("GetSpecificPortMappingEntry",
 			("NewRemoteHost", ""),
+			("NewExternalPort", externalPort),
+			("NewProtocol", protocol)
+		).ContainsKey("NewInternalPort");
+
+		public void AddPortMapping(ushort externalPort, Protocol protocol, ushort? internalPort = null, string description = null) => RunCommand("AddPortMapping",
+			("NewRemoteHost", ""),
+			("NewExternalPort", externalPort),
 			("NewProtocol", protocol),
-			("NewExternalPort", port),
-			("NewInternalClient", client),
-			("NewInternalPort", port),
+			("NewInternalClient", InternalClient),
+			("NewInternalPort", internalPort??externalPort),
 			("NewEnabled", 1),
-			("NewPortMappingDescription", description),
+			("NewPortMappingDescription", description??"UwUPnP"),
 			("NewLeaseDuration", 0)
 		);
 
-		public void Close(Protocol protocol, ushort port) => RunCommand("DeletePortMapping",
+		public void DeletePortMapping(ushort externalPort, Protocol protocol) => RunCommand("DeletePortMapping",
 			("NewRemoteHost", ""),
-			("NewProtocol", protocol),
-			("NewExternalPort", port)
+			("NewExternalPort", externalPort),
+			("NewProtocol", protocol)
 		);
 
-		public bool IsMapped(Protocol protocol, ushort port) => RunCommand("GetSpecificPortMappingEntry",
-			("NewRemoteHost", ""),
-			("NewProtocol", protocol),
-			("NewExternalPort", port)
-		).ContainsKey("NewInternalPort");
+		/// <summary>2.4.14.GetGenericPortMappingEntry</summary>
+		public Dictionary<string,string> GetGenericPortMappingEntry(int portMappingIndex) => RunCommand("GetGenericPortMappingEntry",
+			("NewPortMappingIndex", portMappingIndex)
+		);
 	}
 }
