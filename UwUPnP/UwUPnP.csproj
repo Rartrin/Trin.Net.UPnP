@@ -2,6 +2,21 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
+    <PackageId>UwUPnP</PackageId>
+    <Authors>Rartrin</Authors>
+    <Description>A simple UPnP library.</Description>
+    <PackageLicenseExpression></PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/Rartrin/UwUPnP</RepositoryUrl>
+    <PackageTags>UPnP, Port, Forwarding, Net, Network, Multiplayer, NAT, Traversal</PackageTags>
+    <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
+    <PackageLicenseFile>LICENSE</PackageLicenseFile>
   </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\LICENSE">
+      <Pack>True</Pack>
+      <PackagePath></PackagePath>
+    </None>
+  </ItemGroup>
 
 </Project>
