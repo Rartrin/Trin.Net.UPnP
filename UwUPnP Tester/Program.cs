@@ -18,21 +18,21 @@ namespace UwUPnP.Tester
 			
 			PrintMappings();
 
-			const ushort port = 25000;
-			Console.WriteLine($"IsOpen({Protocol.TCP},{port}) --> {UPnP.IsOpen(Protocol.TCP, port)}");
+			//const ushort port = 25000;
+			//Console.WriteLine($"IsOpen({Protocol.TCP},{port}) --> {UPnP.IsOpen(Protocol.TCP, port)}");
 
-			Console.WriteLine("Opening Port");
-			UPnP.Open(Protocol.TCP, port);
-			Console.WriteLine("Opened");
+			//Console.WriteLine("Opening Port");
+			//UPnP.Open(Protocol.TCP, port);
+			//Console.WriteLine("Opened");
 
-			Console.WriteLine($"IsOpen({Protocol.TCP},{port}) --> {UPnP.IsOpen(Protocol.TCP, port)}");
+			//Console.WriteLine($"IsOpen({Protocol.TCP},{port}) --> {UPnP.IsOpen(Protocol.TCP, port)}");
 
-			PrintMappings();
+			//PrintMappings();
 
-			Console.ReadKey();
-			Console.WriteLine("Closing Port");
-			UPnP.Close(Protocol.TCP, port);
-			Console.WriteLine("Closed");
+			//Console.ReadKey();
+			//Console.WriteLine("Closing Port");
+			//UPnP.Close(Protocol.TCP, port);
+			//Console.WriteLine("Closed");
 		}
 
 
