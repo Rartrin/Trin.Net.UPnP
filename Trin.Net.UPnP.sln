@@ -1,11 +1,11 @@
-﻿
+
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 16
 VisualStudioVersion = 16.0.30907.101
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UwUPnP", "UwUPnP\UwUPnP.csproj", "{4A533C69-CA0E-4EBC-A741-B4122B01FE61}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Trin.Net.UPnP", "Trin.Net.UPnP\Trin.Net.UPnP.csproj", "{4A533C69-CA0E-4EBC-A741-B4122B01FE61}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "UwUPnP Tester", "UwUPnP Tester\UwUPnP Tester.csproj", "{47182D26-9A97-4CC5-BFA0-A16735BAECE4}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Trin.Net.UPnP Tester", "Trin.Net.UPnP Tester\Trin.Net.UPnP Tester.csproj", "{47182D26-9A97-4CC5-BFA0-A16735BAECE4}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "tPnP", "tPnP\tPnP.csproj", "{38E932FF-743D-44AA-AC1F-AA645BA06643}"
 EndProject

@@ -3,11 +3,11 @@
   <PropertyGroup>
     <OutputType>Exe</OutputType>
     <TargetFramework>net5.0</TargetFramework>
-    <RootNamespace>UwUPnP.Tester</RootNamespace>
+    <RootNamespace>Trin.Net.Tester</RootNamespace>
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UwUPnP\UwUPnP.csproj" />
+    <ProjectReference Include="..\Trin.Net.UPnP\Trin.Net.UPnP.csproj" />
   </ItemGroup>
 
 </Project>

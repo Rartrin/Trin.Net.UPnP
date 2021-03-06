@@ -1,7 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 
-namespace UwUPnP.Tester
+namespace Trin.Net.Tester
 {
 	public static class Program
 	{
@@ -18,7 +17,7 @@ namespace UwUPnP.Tester
 			
 			PrintMappings();
 
-			//const ushort port = 25000;
+			//const ushort port = 29000;
 			//Console.WriteLine($"IsOpen({Protocol.TCP},{port}) --> {UPnP.IsOpen(Protocol.TCP, port)}");
 
 			//Console.WriteLine("Opening Port");

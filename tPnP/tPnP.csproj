@@ -5,7 +5,7 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\UwUPnP\UwUPnP.csproj" />
+    <ProjectReference Include="..\Trin.Net.UPnP\Trin.Net.UPnP.csproj" />
   </ItemGroup>
 
 </Project>

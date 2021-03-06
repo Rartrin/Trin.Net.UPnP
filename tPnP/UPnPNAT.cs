@@ -1,6 +1,6 @@
 using System;
 using System.Collections;
-using UwUPnP;
+using Trin.Net;
 
 namespace tPnP
 {

@@ -2,14 +2,16 @@
 
   <PropertyGroup>
     <TargetFramework>net5.0</TargetFramework>
-    <PackageId>UwUPnP</PackageId>
+    <PackageId>Trin.Net.UPnP</PackageId>
     <Authors>Rartrin</Authors>
     <Description>A simple UPnP library.</Description>
     <PackageLicenseExpression></PackageLicenseExpression>
-    <RepositoryUrl>https://github.com/Rartrin/UwUPnP</RepositoryUrl>
-    <PackageTags>UPnP, Port, Forwarding, Net, Network, Multiplayer, NAT, Traversal</PackageTags>
+    <RepositoryUrl>https://github.com/Rartrin/Trin.Net.UPnP</RepositoryUrl>
+    <PackageTags>UPnP, Port, Forwarding, Net, Network, Multiplayer, NAT, Traversal, Trin</PackageTags>
     <GeneratePackageOnBuild>false</GeneratePackageOnBuild>
     <PackageLicenseFile>LICENSE</PackageLicenseFile>
+    <RootNamespace>Trin.Net</RootNamespace>
+    <AssemblyName>Trin.Net.UPnP</AssemblyName>
   </PropertyGroup>
 
   <ItemGroup>

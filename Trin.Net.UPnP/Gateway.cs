@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Xml.Linq;
 
-namespace UwUPnP
+namespace Trin.Net
 {
 	//UPnP Specifications http://upnp.org/specs/gw/UPnP-gw-WANIPConnection-v1-Service.pdf
 	//Helpful overview http://www.upnp-hacks.org/igd.html
@@ -190,7 +190,7 @@ namespace UwUPnP
 		{
 			byte[] data = Encoding.ASCII.GetBytes(requestData);
 
-			HttpWebRequest request = (HttpWebRequest)WebRequest.Create(controlURL);
+			HttpWebRequest request = WebRequest.CreateHttp(controlURL);
 
 			request.Method = "POST";
 			request.ContentType = "text/xml";

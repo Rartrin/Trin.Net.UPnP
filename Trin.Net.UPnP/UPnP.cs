@@ -7,7 +7,7 @@ using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace UwUPnP
+namespace Trin.Net
 {
 	public enum Protocol
 	{
